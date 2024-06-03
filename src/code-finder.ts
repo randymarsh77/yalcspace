@@ -13,11 +13,35 @@ export function getLinkDirectory(packageName: string) {
 	return findProjectRoot(packageName);
 }
 
+function isDirectory(p: string) {
+	try {
+		return fs.statSync(p).isDirectory();
+	} catch (e) {}
+	return false;
+}
+
 export function findProjectRoot(project: string) {
 	// TODO: Check more parts of the filesystem
 	const sourceRoot = os.homedir();
 
-	const queue = [sourceRoot];
+	// TODO: Avoid duplicates for case-sensitive filesystems
+	const queue = [
+		path.join(os.homedir(), 'Code'),
+		path.join(os.homedir(), 'code'),
+		path.join(os.homedir(), 'src'),
+		path.join(os.homedir(), 'Source'),
+		path.join(os.homedir(), 'source'),
+		'C:\\Code',
+		'C:\\code',
+		'C:\\src',
+		'C:\\Source',
+		'C:\\source',
+		os.homedir(),
+		'C:\\',
+	].filter(isDirectory);
+
+	log.debug(`Searching for ${project} in ${queue.join(', ')}`);
+
 	while (queue.length > 0) {
 		const root = queue.shift();
 		if (!root) {
