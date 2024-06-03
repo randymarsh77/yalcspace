@@ -22,13 +22,13 @@ export function generateWorkspace(root: Project): string {
 		tasks: {
 			version: '2.0.0',
 			tasks: projectList.map((p) => {
-				const { name, links } = projects[p];
+				const { name, links, path } = projects[p];
 				return {
 					label: `Build ${name}`,
 					dependsOn: links.map((l) => `Build ${l.name}`),
 					command: 'yarn build && yalc push',
 					options: {
-						cwd: p,
+						cwd: path,
 					},
 					...taskDefaults,
 				};
