@@ -5,6 +5,7 @@
   "description": "Generates a VSCode workspace from yalc links",
   "license": "MIT",
   "main": "dist/cli.js",
+  "bin": "dist/cli.js",
   "files": [
     "dist"
   ],
