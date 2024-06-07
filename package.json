@@ -27,6 +27,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@simple-cli/base": "^1.1.2"
+    "@simple-cli/base": "^1.1.2",
+    "shell-quote": "^1.8.1"
   }
 }

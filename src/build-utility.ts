@@ -1,4 +1,8 @@
+import * as os from 'os';
+import * as path from 'path';
+import * as fs from 'fs';
 import { spawnSync } from 'child_process';
+import { parse } from 'shell-quote';
 import { Project } from './types';
 
 interface BuildOptions {
@@ -21,12 +25,13 @@ export function buildProject(options: BuildOptions) {
 
 		if (buildThisProject) {
 			const cwd = p.path;
+			const { build, push } = getProjectSettings(root, p);
 			console.log(`Building ${p.name}…`);
-			runCommand(getBuildCommand(p), cwd);
+			runCommand(build, cwd);
 
 			if (p.name !== root.name) {
 				console.log(`Pushing ${p.name}…`);
-				runCommand(getPushCommand(p), cwd);
+				runCommand(push, cwd);
 			}
 		}
 	}
@@ -48,16 +53,27 @@ function getBuildOrder(project: Project, visited = new Set<string>()) {
 	return queue;
 }
 
-function getBuildCommand(project: Project) {
-	return 'yarn build';
-}
-
-function getPushCommand(project: Project) {
-	return 'yalc push';
+function getProjectSettings(root: Project, project: Project) {
+	const settingsFile = path.join(
+		os.homedir(),
+		'.yalcspace',
+		root.name,
+		'yalcspace',
+		'settings.json'
+	);
+	const settings = {
+		build: 'yarn build',
+		push: 'yalc push',
+	};
+	if (fs.existsSync(settingsFile)) {
+		const overrides = JSON.parse(fs.readFileSync(settingsFile).toString())[project.name] ?? {};
+		return { ...settings, ...overrides };
+	}
+	return settings;
 }
 
 function runCommand(command: string, cwd: string) {
-	const commandAndArgs = command.split(' ');
+	const commandAndArgs = parse(command);
 	const processName = commandAndArgs.shift();
 	if (!processName) {
 		throw new Error(`Invalid command: ${command}`);
