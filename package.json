@@ -2,31 +2,31 @@
   "name": "yalcspace",
   "version": "0.0.0-managed-by-semantic-release",
   "author": "randymarsh77",
-  "description": "Generates a VSCode workspace from yalc links",
-  "license": "MIT",
-  "main": "dist/cli.js",
-  "bin": "dist/cli.js",
-  "type": "module",
-  "files": [
-    "dist"
-  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/randymarsh77/yalcspace.git"
   },
-  "dependencies": {
-    "@simple-cli/base": "^1.1.1"
-  },
-  "scripts": {
-    "lint": "oxlint ./src",
-    "build": "rimraf dist && bun build ./src/cli.ts --target node --outdir dist",
-    "prepare": "husky"
-  },
+  "main": "dist/cli.js",
   "devDependencies": {
     "@commitlint/cli": "^19.3.0",
     "commitlint-config-faithlife": "^1.0.0",
     "husky": "^9.0.11",
     "oxlint": "^0.4.2",
     "rimraf": "^5.0.7"
+  },
+  "bin": "dist/cli.js",
+  "description": "Generates a VSCode workspace from yalc links",
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "lint": "oxlint ./src",
+    "build": "rimraf dist && bun build ./src/cli.ts --target node --outdir dist",
+    "prepare": "husky"
+  },
+  "type": "module",
+  "dependencies": {
+    "@simple-cli/base": "^1.1.2"
   }
 }

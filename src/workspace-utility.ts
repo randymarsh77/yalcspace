@@ -18,15 +18,26 @@ export function generateWorkspace(root: Project): string {
 	const workspaceDir = path.join(os.homedir(), '.yalcspace', root.name, 'yalcspace');
 	const workspace = {
 		folders: [{ path: workspaceDir }, ...projectList.map((p) => ({ path: projects[p].path }))],
-		settings: {},
+		settings: {
+			'cSpell.words': ['yalcspace'],
+		},
 		tasks: {
 			version: '2.0.0',
+			inputs: [
+				{
+					type: 'pickString',
+					id: 'mode',
+					description: 'Build mode',
+					options: ['Single', 'IncludeDownstreamDependents', 'Everything'],
+					default: 'Single',
+				},
+			],
 			tasks: projectList.map((p) => {
-				const { name, links, path } = projects[p];
+				const { name, path } = projects[p];
 				return {
 					label: `Build ${name}`,
-					dependsOn: links.map((l) => `Build ${l.name}`),
-					command: 'yarn build && yalc push',
+					command: 'npx',
+					args: ['yalcspace', 'build', '--mode', '${input:mode}', '--root', root.path],
 					options: {
 						cwd: path,
 					},
