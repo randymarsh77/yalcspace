@@ -89,7 +89,7 @@ async function build({ options }) {
 	await buildProject({
 		includeDownstream: mode === 'Everything' || mode === 'IncludeDownstreamDependents',
 		includeUpstream: mode === 'Everything',
-		pivot: pivotProject.name,
+		pivot: pivotProject,
 		root: rootProject,
 	});
 	return {

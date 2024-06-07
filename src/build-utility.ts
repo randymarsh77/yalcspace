@@ -4,20 +4,20 @@ import { Project } from './types';
 interface BuildOptions {
 	includeUpstream: boolean;
 	includeDownstream: boolean;
-	pivot: string;
+	pivot: Project;
 	root: Project;
 }
 
 export function buildProject(options: BuildOptions) {
 	const { root, pivot, includeUpstream, includeDownstream } = options;
 	const queue = getBuildOrder(root);
-	let hasSeenPivot = false;
+	const upstreamDeps = getBuildOrder(pivot);
 	for (const p of queue) {
-		const isPivot = p.name === pivot;
-		const buildThisProject = includeUpstream || isPivot || (hasSeenPivot && includeDownstream);
-		if (isPivot) {
-			hasSeenPivot = true;
-		}
+		const isPivot = p.name === pivot.name;
+		const buildThisProject =
+			(includeUpstream && upstreamDeps.find((x) => x.name === p.name)) ||
+			isPivot ||
+			(includeDownstream && getBuildOrder(p).find((x) => x.name === pivot.name));
 
 		if (buildThisProject) {
 			const cwd = p.path;
