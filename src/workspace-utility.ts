@@ -19,7 +19,7 @@ export function generateWorkspace(root: Project): string {
 	const workspace = {
 		folders: [{ path: workspaceDir }, ...projectList.map((p) => ({ path: projects[p].path }))],
 		settings: {
-			'cSpell.words': ['yalcspace'],
+			'cSpell.words': ['yalcspace', 'yalc'],
 		},
 		tasks: {
 			version: '2.0.0',
