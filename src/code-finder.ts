@@ -1,16 +1,22 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { registerProjectLocation, getProjectLocation } from './data';
+import { registerProjectLocation, invalidateProjectLocation, getProjectLocation } from './data';
 import { log } from './logging';
 
 const ignoreDirectories = new Set(['bin', 'obj', 'node_modules', '.yalc', '.yalcspace', '.Trash']);
 
-export function getLinkDirectory(packageName: string) {
+export function findProjectRoot(packageName: string) {
 	const cached = getProjectLocation(packageName);
+	if (cached) {
+		if (fs.existsSync(cached)) {
+			return cached;
+		}
+		invalidateProjectLocation(packageName);
+	}
 
 	log.debug(`Resolving ${packageName}...`);
-	return findProjectRoot(packageName);
+	return doFindProjectRoot(packageName);
 }
 
 function isDirectory(p: string) {
@@ -20,10 +26,8 @@ function isDirectory(p: string) {
 	return false;
 }
 
-export function findProjectRoot(project: string) {
+function doFindProjectRoot(project: string) {
 	// TODO: Check more parts of the filesystem
-	const sourceRoot = os.homedir();
-
 	// TODO: Avoid duplicates for case-sensitive filesystems
 	const queue = [
 		path.join(os.homedir(), 'Code'),
@@ -48,7 +52,7 @@ export function findProjectRoot(project: string) {
 			throw new Error('queue was empty');
 		}
 
-		log.debug(`Checking ${root}...`);
+		log.trace(`Checking ${root}...`);
 		let files: string[] = [];
 		try {
 			// Ignore permissions errors
@@ -80,8 +84,9 @@ export function findProjectRoot(project: string) {
 				queue.push(fullPath);
 			} else if (f === 'package.json') {
 				const pkg = JSON.parse(fs.readFileSync(fullPath).toString());
+				// Index all code that is found
+				registerProjectLocation(project, root);
 				if (pkg.name === project) {
-					registerProjectLocation(project, root);
 					return root;
 				}
 			}

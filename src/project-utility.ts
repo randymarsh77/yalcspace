@@ -1,42 +1,52 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { getLinkDirectory } from './code-finder';
+import { findProjectRoot } from './code-finder';
 import { PackageJson, Project } from './types';
 
-export function resolveProject(directory: string, resolutions = new Set<string>()): Project {
-	resolutions.add(directory);
+export function resolveProject(directory: string): Project {
+	// Assume: You don't have circular references
 	const pkg: PackageJson = JSON.parse(
 		fs.readFileSync(path.join(directory, 'package.json')).toString()
 	);
-	const links = getLocalLinks(pkg);
+	const { links, allDependencies } = getDependencyInformationUsingPackageContents(pkg);
 	const deps: Project[] = [];
 	for (const link of links) {
-		const linkPath = getLinkDirectory(link);
-		if (linkPath && !resolutions.has(linkPath)) {
-			deps.push(resolveProject(linkPath, resolutions));
+		const linkPath = findProjectRoot(link);
+		if (linkPath) {
+			deps.push(resolveProject(linkPath));
 		}
 	}
-	const name = pkg.name.split('/').pop() || pkg.name;
-	return { name, path: directory, links: deps };
+	const nonScopedName = pkg.name.split('/').pop() || pkg.name;
+	return { fullName: pkg.name, nonScopedName, path: directory, links: deps, allDependencies };
 }
 
 const yalcPrefix = 'file:.yalc/';
 
-function getLocalLinks(pkg: PackageJson) {
+export function getDependencyInformationUsingDirectory(directory: string) {
+	const pkg: PackageJson = JSON.parse(
+		fs.readFileSync(path.join(directory, 'package.json')).toString()
+	);
+	return getDependencyInformationUsingPackageContents(pkg);
+}
+
+function getDependencyInformationUsingPackageContents(pkg: PackageJson) {
 	const links: string[] = [];
 	const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
 	for (const dep of Object.keys(allDeps)) {
 		const version = allDeps[dep];
+		if (pkg.name === '@faithlife/rt-vdom-react-view' && dep === '@faithlife/bible-study-react-ui') {
+			console.log('resolve version', version);
+		}
 		if (version.startsWith(yalcPrefix)) {
 			links.push(dep);
 		}
 	}
-	return links;
+	return { links, allDependencies: Object.keys(allDeps) };
 }
 
 export function getProjectMap(project: Project) {
 	const lookup = {
-		[project.name]: project,
+		[project.fullName]: project,
 	};
 	for (const p of project.links) {
 		Object.assign(lookup, getProjectMap(p));

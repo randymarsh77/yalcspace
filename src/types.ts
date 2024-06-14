@@ -1,7 +1,9 @@
 export interface Project {
-	name: string;
+	fullName: string;
+	nonScopedName: string;
 	path: string;
 	links: Project[];
+	allDependencies: string[];
 }
 
 export interface PackageJson {

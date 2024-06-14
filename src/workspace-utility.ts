@@ -12,10 +12,14 @@ const taskDefaults = {
 	},
 };
 
+// For local debugging: Change command to `node` and arg1 to an absolute path to `./dist/cli.js`
+const command = 'npx';
+const arg1 = 'yalcspace';
+
 export function generateWorkspace(root: Project): string {
 	const projects = getProjectMap(root);
 	const projectList = Object.keys(projects).sort();
-	const workspaceDir = path.join(os.homedir(), '.yalcspace', root.name, 'yalcspace');
+	const workspaceDir = path.join(os.homedir(), '.yalcspace', root.nonScopedName, 'yalcspace');
 	const workspace = {
 		folders: [{ path: workspaceDir }, ...projectList.map((p) => ({ path: projects[p].path }))],
 		settings: {
@@ -31,19 +35,54 @@ export function generateWorkspace(root: Project): string {
 					options: ['Single', 'IncludeDownstreamDependents', 'Everything'],
 					default: 'Single',
 				},
+				{
+					type: 'pickString',
+					id: 'package',
+					description: 'Package name',
+					options: projectList.map((p) => projects[p].fullName),
+				},
 			],
-			tasks: projectList.map((p) => {
-				const { name, path } = projects[p];
-				return {
-					label: `Build ${name}`,
-					command: 'npx',
-					args: ['yalcspace', 'build', '--mode', '${input:mode}', '--root', root.path],
+			tasks: [
+				{
+					label: `Complete Yalcspace`,
+					command,
+					args: [arg1, 'complete'],
 					options: {
-						cwd: path,
+						cwd: root.path,
 					},
 					...taskDefaults,
-				};
-			}),
+				},
+				{
+					label: `Regenerate Yalcspace`,
+					command,
+					args: ['/Users/matt.preucil/source/3/yalcspace/dist/cli.js'],
+					options: {
+						cwd: root.path,
+					},
+					...taskDefaults,
+				},
+				{
+					label: `Eject Package`,
+					command,
+					args: [arg1, 'eject', '--pkg', '${input:package}'],
+					options: {
+						cwd: root.path,
+					},
+					...taskDefaults,
+				},
+				...projectList.map((p) => {
+					const { nonScopedName, path } = projects[p];
+					return {
+						label: `Build ${nonScopedName}`,
+						command,
+						args: [arg1, 'build', '--mode', '${input:mode}', '--root', root.path],
+						options: {
+							cwd: path,
+						},
+						...taskDefaults,
+					};
+				}),
+			],
 		},
 	};
 	return JSON.stringify(workspace, null, 2);

@@ -3,12 +3,18 @@ import * as path from 'path';
 import { spawnSync } from 'child_process';
 import { dataDir } from './data';
 import { buildProject } from './build-utility';
+import { closeAndCompleteSpace } from './closure';
+import { eject } from './eject';
 import { resolveProject } from './project-utility';
 import { generateWorkspace } from './workspace-utility';
 import { ICommand } from '@simple-cli/base';
 
 const name = 'null';
 const summary = 'Generate and open a VSCode workspace for the current project';
+
+interface IEjectOptions {
+	pkg: string;
+}
 
 export const commands: ICommand<any>[] = [
 	{
@@ -25,7 +31,7 @@ export const commands: ICommand<any>[] = [
 				content: `$ yalcspace <options>`,
 			},
 		],
-		execute: generateAndOpenWorkspace,
+		execute: async () => await generateAndOpenWorkspace(),
 	},
 	{
 		name: 'build',
@@ -52,18 +58,54 @@ Build mode:
 		usage: [],
 		execute: build,
 	},
+	{
+		name: 'complete',
+		summary: `
+Closes and completes the yalcspace.
+A yalcspace is "closed" when, for each project in the yalcspace, all dependencies of the project that have a dependency on a project in the yalcspace are also themselves part of the yalcspace.
+A yalcspace is "complete" when every project in the yalcspace that has a dependency on another project in the yalcspace, the dependency is yalc'd.
+`.trim(),
+		definitions: [],
+		usage: [],
+		execute: async () => {
+			await closeAndCompleteSpace(resolveProject(process.cwd()));
+			await generateAndOpenWorkspace();
+			return {
+				code: 0,
+			};
+		},
+	},
+	{
+		name: 'eject',
+		summary: 'Remove a package from the yalcspace',
+		definitions: [
+			{
+				name: 'pkg',
+				type: String,
+				description: 'The package to remove.',
+			},
+		],
+		usage: [],
+		execute: async ({ options }) => {
+			const { pkg } = options as IEjectOptions;
+			await eject(pkg, resolveProject(process.cwd()));
+			await generateAndOpenWorkspace();
+			return {
+				code: 0,
+			};
+		},
+	},
 ];
 
-async function generateAndOpenWorkspace() {
-	const root = process.cwd();
+async function generateAndOpenWorkspace(root: string = process.cwd()) {
 	const project = resolveProject(root);
 	const workspace = generateWorkspace(project);
 
 	const workspacePath = path.join(
 		dataDir,
-		project.name,
+		project.nonScopedName,
 		'yalcspace',
-		`${project.name}.code-workspace`
+		`${project.nonScopedName}.code-workspace`
 	);
 	if (!fs.existsSync(workspacePath)) {
 		fs.mkdirSync(path.dirname(workspacePath), { recursive: true });
@@ -91,6 +133,7 @@ async function build({ options }) {
 		includeUpstream: mode === 'Everything',
 		pivot: pivotProject,
 		root: rootProject,
+		pushAndPublishRoot: false,
 	});
 	return {
 		code: 0,
