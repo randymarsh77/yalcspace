@@ -55,7 +55,7 @@ export function generateWorkspace(root: Project): string {
 				{
 					label: `Regenerate Yalcspace`,
 					command,
-					args: ['/Users/matt.preucil/source/3/yalcspace/dist/cli.js'],
+					args: [arg1],
 					options: {
 						cwd: root.path,
 					},
