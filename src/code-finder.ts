@@ -53,12 +53,18 @@ function doFindProjectRoot(project: string) {
 		}
 
 		log.trace(`Checking ${root}...`);
+		let files: string[] = [];
 		try {
+			files = fs.readdirSync(root);
+		} catch (e) {
 			// Ignore permissions errors
-			const files = fs.readdirSync(root);
-			for (const f of files) {
-				const fullPath = path.join(root, f);
-				log.trace(`  ${fullPath}`);
+			continue;
+		}
+
+		for (const f of files) {
+			const fullPath = path.join(root, f);
+			log.trace(`  ${fullPath}`);
+			try {
 				const stat = fs.lstatSync(fullPath);
 				if (stat.isDirectory()) {
 					if (ignoreDirectories.has(f)) {
@@ -85,9 +91,10 @@ function doFindProjectRoot(project: string) {
 						return root;
 					}
 				}
+			} catch (e) {
+				// Ignore permissions errors
+				continue;
 			}
-		} catch (e) {
-			continue;
 		}
 	}
 }
