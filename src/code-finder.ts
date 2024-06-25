@@ -53,43 +53,41 @@ function doFindProjectRoot(project: string) {
 		}
 
 		log.trace(`Checking ${root}...`);
-		let files: string[] = [];
 		try {
 			// Ignore permissions errors
-			files = fs.readdirSync(root);
-		} catch (e) {
-			continue;
-		}
+			const files = fs.readdirSync(root);
+			for (const f of files) {
+				const fullPath = path.join(root, f);
+				log.trace(`  ${fullPath}`);
+				const stat = fs.lstatSync(fullPath);
+				if (stat.isDirectory()) {
+					if (ignoreDirectories.has(f)) {
+						continue;
+					}
+					if (f.endsWith('.app')) {
+						// Skip macOS app bundles
+						continue;
+					}
+					if (f === '.git') {
+						// TODO: actual optimization
+						// Assume most source code is in one fs subtree
+						// Switch to depth first for this node's parent, process down to each .git containing directory, re-process the full parent in case there was nesting skipped by breadth-first
+						// Optimizes finding `source/very/deeply/nested/targetProject` by skipping `other/level/**/irrelevant` when `other` is ordered before `source` in breadth-first
+						continue;
+					}
 
-		for (const f of files) {
-			const fullPath = path.join(root, f);
-			log.trace(`  ${fullPath}`);
-			const stat = fs.lstatSync(fullPath);
-			if (stat.isDirectory()) {
-				if (ignoreDirectories.has(f)) {
-					continue;
-				}
-				if (f.endsWith('.app')) {
-					// Skip macOS app bundles
-					continue;
-				}
-				if (f === '.git') {
-					// TODO: actual optimization
-					// Assume most source code is in one fs subtree
-					// Switch to depth first for this node's parent, process down to each .git containing directory, re-process the full parent in case there was nesting skipped by breadth-first
-					// Optimizes finding `source/very/deeply/nested/targetProject` by skipping `other/level/**/irrelevant` when `other` is ordered before `source` in breadth-first
-					continue;
-				}
-
-				queue.push(fullPath);
-			} else if (f === 'package.json') {
-				const pkg = JSON.parse(fs.readFileSync(fullPath).toString());
-				// Index all code that is found
-				registerProjectLocation(project, root);
-				if (pkg.name === project) {
-					return root;
+					queue.push(fullPath);
+				} else if (f === 'package.json') {
+					const pkg = JSON.parse(fs.readFileSync(fullPath).toString());
+					// Index all code that is found
+					registerProjectLocation(project, root);
+					if (pkg.name === project) {
+						return root;
+					}
 				}
 			}
+		} catch (e) {
+			continue;
 		}
 	}
 }
