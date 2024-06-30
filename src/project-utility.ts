@@ -20,7 +20,7 @@ export function resolveProject(directory: string): Project {
 	return { fullName: pkg.name, nonScopedName, path: directory, links: deps, allDependencies };
 }
 
-const yalcPrefix = 'file:.yalc/';
+const yalcPrefix = `file:.yalc${path.sep}`;
 
 export function getDependencyInformationUsingDirectory(directory: string) {
 	const pkg: PackageJson = JSON.parse(

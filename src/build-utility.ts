@@ -1,8 +1,7 @@
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
-import { spawnSync } from 'child_process';
-import { parse } from 'shell-quote';
+import { toPlatformPath, runRawCommand } from './compatibility';
 import { log } from './logging';
 import { PackageJson, Project } from './types';
 import { traverseSpace } from './utility';
@@ -42,17 +41,17 @@ export function buildProject(options: BuildOptions) {
 			const cwd = p.path;
 			const { build, publish, push, install } = getProjectSettings(root, p);
 			log.debug(`Installing ${p.fullName}…`);
-			runCommand(install, cwd);
+			runRawCommand(install, { cwd });
 
 			log.debug(`Building ${p.fullName} with '${build}'…`);
-			runCommand(build, cwd);
+			runRawCommand(build, { cwd });
 
 			if (p.fullName !== root.fullName || pushAndPublishRoot) {
 				log.debug(`Publishing ${p.fullName}…`);
-				runCommand(publish, cwd);
+				runRawCommand(publish, { cwd });
 
 				log.debug(`Pushing ${p.fullName}…`);
-				runCommand(push, cwd);
+				runRawCommand(push, { cwd });
 			}
 		}
 	}
@@ -100,18 +99,6 @@ function getProjectSettings(root: Project, project: Project): ProjectSettings {
 		return { ...settings, ...overrides };
 	}
 	return settings;
-}
-
-function runCommand(command: string, cwd: string) {
-	const commandAndArgs = parse(command);
-	const processName = commandAndArgs.shift();
-	if (!processName) {
-		throw new Error(`Invalid command: ${command}`);
-	}
-	const { status } = spawnSync(processName, commandAndArgs, { stdio: 'inherit', cwd });
-	if (status !== 0) {
-		throw new Error(`Command failed: ${command} | From: ${cwd}`);
-	}
 }
 
 function fixInvalidYalcLinks(project: Project) {
@@ -172,7 +159,7 @@ function fixInvalidYalcLinks(project: Project) {
 			);
 			if (fs.existsSync(originalLinkPath)) {
 				log.debug(`  ${originalLinkPath} exists. Replacing link.`);
-				const newVersion = `file:${path.dirname(originalLinkPath)}`;
+				const newVersion = toPlatformPath(`file:${path.dirname(originalLinkPath)}`);
 				replacePackageVersion(packagePath, version, newVersion);
 				continue;
 			}

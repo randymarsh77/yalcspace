@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { spawnSync } from 'child_process';
 import * as yarnLock from '@yarnpkg/lockfile';
 import { buildProject } from './build-utility';
 import { findProjectRoot } from './code-finder';
+import { runCommand } from './compatibility';
 import { resolveProject, getDependencyInformationUsingDirectory } from './project-utility';
 import { log } from './logging';
 import { Project } from './types';
@@ -64,7 +64,9 @@ async function tryCloseSpace(
 				// Step 2: Locally link dep to pkg
 				// Don't link a package to itself
 				if (lastUpstream !== pkg) {
-					spawnSync('yalc', ['add', lastUpstream], { stdio: 'inherit', cwd: directory });
+					runCommand('yalc', ['add', lastUpstream], {
+						cwd: directory,
+					});
 				}
 
 				if (!deps.has(pkg) && !additionalDeps.has(pkg)) {
@@ -143,7 +145,7 @@ function completeSpace(root: Project) {
 		for (const dep of deps) {
 			if (yalcspaceDeps.has(dep) && !project.links.find((p) => p.fullName === dep)) {
 				console.log(`Linking ${dep} to ${project.fullName}`);
-				spawnSync('yalc', ['add', dep], { stdio: 'inherit', cwd: project.path });
+				runCommand('yalc', ['add', dep], { cwd: project.path });
 			}
 		}
 	}

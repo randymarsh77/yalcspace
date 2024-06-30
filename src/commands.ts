@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { spawnSync } from 'child_process';
 import { dataDir } from './data';
 import { buildProject } from './build-utility';
 import { closeAndCompleteSpace } from './closure';
+import { runCommand } from './compatibility';
 import { eject } from './eject';
 import { resolveProject } from './project-utility';
 import { generateWorkspace } from './workspace-utility';
@@ -112,7 +112,7 @@ async function generateAndOpenWorkspace(root: string = process.cwd()) {
 	}
 	fs.writeFileSync(workspacePath, workspace);
 
-	spawnSync('code', [workspacePath], { stdio: 'inherit' });
+	runCommand('code', [workspacePath]);
 
 	return {
 		code: 0,
