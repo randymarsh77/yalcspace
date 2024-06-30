@@ -31,10 +31,11 @@ export async function closeAndCompleteSpace(root: Project) {
 	let result = root;
 	while (!spaceIsClosed) {
 		iterations++;
-		console.log(`Attempting to close yalcspace; Iteration: ${iterations}`);
+		log.info(`Attempting to close yalcspace; Iteration: ${iterations}`);
 		spaceIsClosed = await tryCloseSpace(result, memo);
 		result = resolveProject(root.path);
 	}
+	log.info(`Successfully closed space.`);
 	return completeSpace(result);
 }
 
@@ -45,7 +46,7 @@ async function tryCloseSpace(
 	const yalcspaceProjects = traverseSpace(root);
 	const deps = new Set(yalcspaceProjects.map((p) => p.fullName));
 	const additionalDeps = new Set<string>();
-	log.debug(`Closing Yalcspace: ${[...deps].join(', ')}`);
+	log.info(`Closing over: {\n  ${[...deps].join(',\n  ')}\n}\n`);
 	for (const dep of deps) {
 		log.debug(`Checking ${dep}`);
 		const paths = computeDependencyPaths(dep, root, depInfo);
@@ -64,12 +65,15 @@ async function tryCloseSpace(
 				// Step 2: Locally link dep to pkg
 				// Don't link a package to itself
 				if (lastUpstream !== pkg) {
+					log.debug(`Linking ${lastUpstream} to ${pkg}`);
 					runCommand('yalc', ['add', lastUpstream], {
+						stdio: 'ignore',
 						cwd: directory,
 					});
 				}
 
 				if (!deps.has(pkg) && !additionalDeps.has(pkg)) {
+					log.info(`Adding additional dependency: ${pkg} | Located: ${directory}`);
 					additionalDeps.add(pkg);
 					// We're iterating in order of upstream to root, and adding as we go.
 					// So, the current package has a dependency on 'dep', and we need to:
@@ -138,17 +142,19 @@ function completeSpace(root: Project) {
 	// 3. If they are, run 'yalc add'
 
 	// Assume: root is a closed space.
+	log.info(`Completing space…`);
 	const yalcspaceProjects = traverseSpace(root);
 	const yalcspaceDeps = new Set(yalcspaceProjects.map((p) => p.fullName));
 	for (const project of traverseSpace(root)) {
 		const deps = getDirectDependencies(project);
 		for (const dep of deps) {
 			if (yalcspaceDeps.has(dep) && !project.links.find((p) => p.fullName === dep)) {
-				console.log(`Linking ${dep} to ${project.fullName}`);
-				runCommand('yalc', ['add', dep], { cwd: project.path });
+				log.info(`Linking ${dep} to ${project.fullName}`);
+				runCommand('yalc', ['add', dep], { stdio: 'ignore', cwd: project.path });
 			}
 		}
 	}
+	log.info(`Successfully completed space.`);
 
 	return resolveProject(root.path);
 }

@@ -1,4 +1,5 @@
 interface LoggingConfiguration {
+	info: boolean;
 	debug: boolean;
 	trace: boolean;
 }
@@ -10,6 +11,7 @@ function getLoggingConfiguration(): LoggingConfiguration {
 	const trace = process.env.TRACE === 'true';
 	const debug = trace || process.env.DEBUG === 'true';
 	return {
+		info: true,
 		debug,
 		trace,
 	};
@@ -19,6 +21,13 @@ let activateTraceRefCount = 0;
 
 function processLoggingArgs(...args: any[]) {
 	return args.map((arg) => (typeof arg === 'function' ? arg() : arg));
+}
+
+function info(...args: any[]) {
+	const config = getLoggingConfiguration();
+	if (config.info) {
+		console.info(...processLoggingArgs(...args));
+	}
 }
 
 function debug(...args: any[]) {
@@ -40,4 +49,5 @@ function trace(...args: any[]) {
 export const log = {
 	trace,
 	debug,
+	info,
 };

@@ -34,9 +34,6 @@ function getDependencyInformationUsingPackageContents(pkg: PackageJson) {
 	const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
 	for (const dep of Object.keys(allDeps)) {
 		const version = allDeps[dep];
-		if (pkg.name === '@faithlife/rt-vdom-react-view' && dep === '@faithlife/bible-study-react-ui') {
-			console.log('resolve version', version);
-		}
 		if (version.startsWith(yalcPrefix)) {
 			links.push(dep);
 		}

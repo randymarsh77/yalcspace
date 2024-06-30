@@ -1,7 +1,8 @@
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
-import { toPlatformPath, runRawCommand } from './compatibility';
+import { StdioOptions } from 'child_process';
+import { toPlatformPath, runRawCommand, runCommand } from './compatibility';
 import { log } from './logging';
 import { PackageJson, Project } from './types';
 import { traverseSpace } from './utility';
@@ -27,7 +28,7 @@ export function buildProject(options: BuildOptions) {
 		}
 		return acc;
 	}, [] as Project[]);
-	log.debug('Build Queue: ', queue.map((p) => p.fullName).join(' -> '));
+	log.debug('\nBuild Queue:\n   ', queue.map((p) => p.fullName).join('\n -> '), '\n');
 	for (const p of queue) {
 		const isPivot = p.fullName === pivot.fullName;
 		const buildThisProject =
@@ -36,22 +37,24 @@ export function buildProject(options: BuildOptions) {
 			(includeDownstream && getBuildOrder(p).find((x) => x.fullName === pivot.fullName));
 
 		if (buildThisProject) {
+			log.info(`Building ${p.fullName}…`);
 			fixInvalidYalcLinks(p);
 
 			const cwd = p.path;
 			const { build, publish, push, install } = getProjectSettings(root, p);
-			log.debug(`Installing ${p.fullName}…`);
-			runRawCommand(install, { cwd });
+			const stdio: StdioOptions = 'ignore';
+			log.info(`Installing modules for ${p.fullName}…`);
+			runRawCommand(install, { cwd, stdio });
 
-			log.debug(`Building ${p.fullName} with '${build}'…`);
-			runRawCommand(build, { cwd });
+			log.info(`Building ${p.fullName} with command: '${build}'…`);
+			runRawCommand(build, { cwd, stdio });
 
 			if (p.fullName !== root.fullName || pushAndPublishRoot) {
-				log.debug(`Publishing ${p.fullName}…`);
-				runRawCommand(publish, { cwd });
+				log.info(`Publishing ${p.fullName}…`);
+				runRawCommand(publish, { cwd, stdio });
 
-				log.debug(`Pushing ${p.fullName}…`);
-				runRawCommand(push, { cwd });
+				log.info(`Pushing ${p.fullName}…`);
+				runRawCommand(push, { cwd, stdio });
 			}
 		}
 	}
