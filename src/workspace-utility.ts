@@ -32,7 +32,14 @@ export function generateWorkspace(root: Project): string {
 					type: 'pickString',
 					id: 'mode',
 					description: 'Build mode',
-					options: ['Single', 'IncludeDownstreamDependents', 'Everything'],
+					options: ['IncludeDownstreamDependents', 'Single', 'Everything'],
+					default: 'IncludeDownstreamDependents',
+				},
+				{
+					type: 'pickString',
+					id: 'modeRoot',
+					description: 'Build mode',
+					options: ['Single', 'Everything'],
 					default: 'Single',
 				},
 				{
@@ -72,10 +79,18 @@ export function generateWorkspace(root: Project): string {
 				},
 				...projectList.map((p) => {
 					const { nonScopedName, path } = projects[p];
+					const isRoot = path === root.path;
 					return {
 						label: `Build ${nonScopedName}`,
 						command,
-						args: [arg1, 'build', '--mode', '${input:mode}', '--root', root.path],
+						args: [
+							arg1,
+							'build',
+							'--mode',
+							isRoot ? '${input:modeRoot}' : '${input:mode}',
+							'--root',
+							root.path,
+						],
 						options: {
 							cwd: path,
 						},
