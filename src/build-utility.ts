@@ -38,6 +38,7 @@ export function buildProject(options: BuildOptions) {
 
 		if (buildThisProject) {
 			log.info(`Building ${p.fullName}…`);
+			removeInvalidYalcReferences(p);
 			fixInvalidYalcLinks(p);
 
 			const cwd = p.path;
@@ -102,6 +103,22 @@ function getProjectSettings(root: Project, project: Project): ProjectSettings {
 		return { ...settings, ...overrides };
 	}
 	return settings;
+}
+
+function removeInvalidYalcReferences(project: Project) {
+	log.debug(
+		'Project is linked to: {\n ' + project.links.map((p) => p.fullName).join(',\n ') + '\n}'
+	);
+	const yalcInstallationsPath = path.join(project.path, '.yalc');
+	for (const link of project.links) {
+		log.debug(`Validating link to ${link.fullName}`);
+		const installationPath = path.join(yalcInstallationsPath, link.fullName);
+		if (!fs.existsSync(installationPath)) {
+			log.info('Detected missing link:', installationPath);
+			log.info('Removing link to:', link.fullName);
+			runCommand('yalc', ['remove', link.fullName], { cwd: project.path });
+		}
+	}
 }
 
 function fixInvalidYalcLinks(project: Project) {
