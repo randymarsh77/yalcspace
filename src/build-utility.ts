@@ -150,7 +150,7 @@ function fixInvalidYalcLinks(project: Project) {
 			);
 			if (fs.existsSync(localInstallationPackagePath)) {
 				log.debug(`  ${localInstallationPackagePath} exists. Replacing link.`);
-				const newVersion = `file:${path.dirname(localInstallationPackagePath)}`;
+				const newVersion = toPlatformPath(`file:${path.dirname(localInstallationPackagePath)}`);
 				replacePackageVersion(packagePath, version, newVersion);
 				continue;
 			}
