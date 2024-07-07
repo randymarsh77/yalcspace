@@ -5,9 +5,7 @@ import { PackageJson, Project } from './types';
 
 export function resolveProject(directory: string): Project {
 	// Assume: You don't have circular references
-	const pkg: PackageJson = JSON.parse(
-		fs.readFileSync(path.join(directory, 'package.json')).toString()
-	);
+	const pkg = readPackageJson(directory);
 	const { links, allDependencies } = getDependencyInformationUsingPackageContents(pkg);
 	const deps: Project[] = [];
 	for (const link of links) {
@@ -23,9 +21,7 @@ export function resolveProject(directory: string): Project {
 const yalcPrefix = `file:.yalc`;
 
 export function getDependencyInformationUsingDirectory(directory: string) {
-	const pkg: PackageJson = JSON.parse(
-		fs.readFileSync(path.join(directory, 'package.json')).toString()
-	);
+	const pkg = readPackageJson(directory);
 	return getDependencyInformationUsingPackageContents(pkg);
 }
 
@@ -49,4 +45,17 @@ export function getProjectMap(project: Project) {
 		Object.assign(lookup, getProjectMap(p));
 	}
 	return lookup;
+}
+
+function readPackageJson(directory: string) {
+	let pkg: PackageJson | null = null;
+	try {
+		pkg = JSON.parse(fs.readFileSync(path.join(directory, 'package.json')).toString());
+	} catch (e) {
+		console.error(`Could not parse package.json: ${e}`);
+	}
+	if (!pkg) {
+		throw new Error(`Could not read package.json in ${directory}`);
+	}
+	return pkg;
 }
