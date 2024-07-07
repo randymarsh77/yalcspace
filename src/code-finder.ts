@@ -27,22 +27,32 @@ function isDirectory(p: string) {
 }
 
 function doFindProjectRoot(project: string) {
-	// TODO: Check more parts of the filesystem
-	// TODO: Avoid duplicates for case-sensitive filesystems
+	const searched = new Set<string>();
+	const currentLocations = process
+		.cwd()
+		.split(path.sep)
+		.reduce<string[]>((acc, v) => {
+			const last = acc[acc.length - 1];
+			const newPath = last ? path.join(last, v) : v;
+			return [...acc, newPath];
+		}, []);
+	const caseSensitive = fsIsCaseSensitive();
 	const queue = [
-		path.join(os.homedir(), 'Code'),
+		...currentLocations,
+		caseSensitive ? path.join(os.homedir(), 'Code') : null,
 		path.join(os.homedir(), 'code'),
+		caseSensitive ? path.join(os.homedir(), 'Src') : null,
 		path.join(os.homedir(), 'src'),
-		path.join(os.homedir(), 'Source'),
+		caseSensitive ? path.join(os.homedir(), 'Source') : null,
 		path.join(os.homedir(), 'source'),
-		'C:\\Code',
+		caseSensitive ? 'C:\\Code' : null,
 		'C:\\code',
 		'C:\\src',
-		'C:\\Source',
+		caseSensitive ? 'C:\\Source' : null,
 		'C:\\source',
 		os.homedir(),
 		'C:\\',
-	].filter(isDirectory);
+	].filter((x) => x && isDirectory(x));
 
 	log.debug(`Searching for ${project} in ${queue.join(', ')}`);
 
@@ -52,7 +62,13 @@ function doFindProjectRoot(project: string) {
 			throw new Error('queue was empty');
 		}
 
+		if (searched.has(root)) {
+			continue;
+		}
+
 		log.trace(`Checking ${root}...`);
+		searched.add(root);
+
 		let files: string[] = [];
 		try {
 			files = fs.readdirSync(root);
@@ -97,4 +113,21 @@ function doFindProjectRoot(project: string) {
 			}
 		}
 	}
+}
+
+function fsIsCaseSensitive() {
+	const testName = 'tEsTcaseSensitive';
+	const tmpdir = os.tmpdir();
+	const testPath = path.join(tmpdir, testName.toLowerCase());
+	try {
+		fs.mkdirSync(testPath);
+		try {
+			fs.statSync(path.join(tmpdir, testName));
+		} catch (e) {
+			return true;
+		}
+	} finally {
+		fs.rmdirSync(testPath);
+	}
+	return false;
 }
