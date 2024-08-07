@@ -2,7 +2,7 @@
 
 Dynamic VSCode workspaces from yalc links.
 
-## Usage
+## Getting started
 
 In your top-level project directory:
 
@@ -10,7 +10,7 @@ In your top-level project directory:
 $ npx yalcspace
 ```
 
-Enjoy!
+Enjoy! See [Usage](#usage) for more information.
 
 ## What problems is this solving?
 
@@ -52,9 +52,11 @@ At this stage, `yalcspace` assumes that every project can be built with `yarn bu
 }
 ```
 
-## More useful stuff
+## Usage
 
-You can look at the generated workspace file to see what commands are available. They're all in the build command group, accessibly through `cmd|ctrl+shift+b`.
+In your top-level project directory, run `npx yalcspace`. This will create a new VSCode workspace including the directory you ran the command with along with all the currently yalc'd packages, and then open that workspace.
+
+You can look at the generated workspace file (in the `yalcspace` directory o the workspace) to see what VSCode commands are available. They're all in the build command group, accessible through `cmd|ctrl+shift+b`.
 
 ### Want to add a new dependency?
 
@@ -62,7 +64,25 @@ You can look at the generated workspace file to see what commands are available.
 
 ### Want to ensure you don't have multiple bundled versions?
 
-`Complete Yalcspace` ... hope you have all the transitive dependencies on disk. If this command doesn't complete after a while, you might not.
+We do this by linking each project to all transitive dependency projects that connect to the root and building everything. Depending on your dependency graph and what is in your yalcspace, this might be a lot. It's helpful to understand what the upcoming command is doing before running it.
+
+#### Terminology
+
+A yalcspace is "closed" when any dependency of a project in the yalcspace that has a dependency on another in the yalcspace is also part of the yalcspace.
+A yalcspace is "complete" if there is no non-linked dependency of any member of the yalcspace which is also in the yalcspace.
+
+#### Example
+
+Consider a scenario where Root, A, and C are packages such that Root depends on A and on C, for another dependency B, A depends on B, and B depends on C.
+Now consider a partial (yalc)space: { Root -> A, Root -> C } where A is yalc'd to Root and C is yalc'd to Root (and, the VSCode worksspace contains Root, A, and C).
+Closing the space requires we add B to the space and end up with { Root, A, B, C }.
+Completing the space requires that C is yalc'd to B, B is yalc'd to A and to Root, and A is yalc'd to Root.
+
+#### Completing the space
+
+`Complete Yalcspace` -- This will both close and complete your current yalcspace.
+
+You need to have all the transitive dependencies on disk. If this command doesn't complete after a while, you might not. They also need to build successfully with your current workspace settings and/or the yalcspace defaults.
 
 ### Done with a given package?
 
@@ -70,7 +90,10 @@ You can look at the generated workspace file to see what commands are available.
 
 ### Building?
 
-All your pacakges are there. You can build any of them in isolation, or include everything that references them, or, just everything.
+All your pacakges are there. You can build any of them in isolation, or include everything that references them, or, just everything. Activate `cmd|ctrl+shift+b` and Start typing in the name of the package you want to start building from. Select it, and then choose the build mode from the following menu.
+- Include Downstream means you build your selection, and everything that depends on it, following the dependency graph to the root of the space.
+- Single means you just build that package
+- Everything means you start from the lowest dependency in the graph connecterd to your selection and follow the graph to the root off the space.
 
 ## License
 
