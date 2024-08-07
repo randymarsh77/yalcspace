@@ -14,9 +14,11 @@ Enjoy! See [Usage](#usage) for more information.
 
 ## What problems is this solving?
 
-### Duplicate packages
+`yalc` is fantastic. Sometimes it needs hand holding. Others, a hammer.
 
-`yalc` is fantastic. However, `yarn` has a tendency to install multiple package versions when using `yalc`. This is because `file://path/to/package@0.0.0-we-use-semantic-release` is not a compatible version with `package@1.2.3`. If you're building a project (X) with a yalc'd dependency (A), and X also has a dependency (B) that depends on A, then `yarn` might install your local version of A in `node_modules` and the version referenced by B in `node_modules/B/node_modules`. Your build of X might then contain two copies of A. Now, this might make a difference or it might not, depending on X, A, and B.
+### Duplicate packages in your bundle (AKA broken React Context and other bugs)
+
+`yarn` has a tendency to install multiple package versions when using `yalc`. This is because `file://path/to/package@0.0.0-we-use-semantic-release` is not a compatible version with `package@1.2.3`. If you're building a project (X) with a yalc'd dependency (A), and X also has a dependency (B) that depends on A, then `yarn` might install your local version of A in `node_modules` and the version referenced by B in `node_modules/B/node_modules`. Your build of X might then contain two copies of A. Now, this might make a difference or it might not, depending on X, A, and B.
 
 ### Invalid file locations
 
@@ -86,7 +88,7 @@ You need to have all the transitive dependencies on disk. If this command doesn'
 
 ### Done with a given package?
 
-`Eject Package`.
+`Eject Package` and select which one to remove from the workspace. If you want to reset everything, use `Eject All`.
 
 ### Building?
 
