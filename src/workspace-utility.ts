@@ -77,6 +77,15 @@ export function generateWorkspace(root: Project): string {
 					},
 					...taskDefaults,
 				},
+				{
+					label: `Eject All`,
+					command,
+					args: [arg1, 'eject', '--all'],
+					options: {
+						cwd: root.path,
+					},
+					...taskDefaults,
+				},
 				...projectList.map((p) => {
 					const { nonScopedName, path } = projects[p];
 					const isRoot = path === root.path;

@@ -4,7 +4,7 @@ import { dataDir } from './data';
 import { buildProject } from './build-utility';
 import { closeAndCompleteSpace } from './closure';
 import { runCommand } from './compatibility';
-import { eject } from './eject';
+import { eject, ejectAll } from './eject';
 import { resolveProject } from './project-utility';
 import { generateWorkspace } from './workspace-utility';
 import { ICommand } from '@simple-cli/base';
@@ -13,7 +13,8 @@ const name = 'null';
 const summary = 'Generate and open a VSCode workspace for the current project';
 
 interface IEjectOptions {
-	pkg: string;
+	pkg?: string;
+	all?: boolean;
 }
 
 export const commands: ICommand<any>[] = [
@@ -77,18 +78,27 @@ A yalcspace is "complete" when every project in the yalcspace that has a depende
 	},
 	{
 		name: 'eject',
-		summary: 'Remove a package from the yalcspace',
+		summary: 'Remove one or more packages from the yalcspace',
 		definitions: [
 			{
 				name: 'pkg',
 				type: String,
 				description: 'The package to remove.',
 			},
+			{
+				name: 'all',
+				type: Boolean,
+				description: 'Remove all packages from the yalcspace.',
+			},
 		],
 		usage: [],
 		execute: async ({ options }) => {
-			const { pkg } = options as IEjectOptions;
-			await eject(pkg, resolveProject(process.cwd()));
+			const { pkg, all } = options as IEjectOptions;
+			if (all) {
+				await ejectAll(resolveProject(process.cwd()));
+			} else if (pkg) {
+				await eject(pkg, resolveProject(process.cwd()));
+			}
 			await generateAndOpenWorkspace();
 			return {
 				code: 0,

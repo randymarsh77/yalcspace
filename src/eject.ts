@@ -17,3 +17,12 @@ export function eject(packageName: string, root: Project) {
 		}
 	}
 }
+
+export function ejectAll(root: Project) {
+	log.info(`Ejecting all packages from ${root.fullName}…`);
+	for (const project of traverseSpace(root)) {
+		if (project.fullName !== root.fullName) {
+			eject(project.fullName, root);
+		}
+	}
+}
