@@ -86,6 +86,15 @@ export function generateWorkspace(root: Project): string {
 					},
 					...taskDefaults,
 				},
+				{
+					label: 'Build Everything',
+					command,
+					args: [arg1, 'build', '--mode', 'Everything', '--root', root.path],
+					options: {
+						cwd: root.path,
+					},
+					...taskDefaults,
+				},
 				...projectList.map((p) => {
 					const { nonScopedName, path } = projects[p];
 					const isRoot = path === root.path;

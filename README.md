@@ -58,7 +58,16 @@ At this stage, `yalcspace` assumes that every project can be built with `yarn bu
 
 In your top-level project directory, run `npx yalcspace`. This will create a new VSCode workspace including the directory you ran the command with along with all the currently yalc'd packages, and then open that workspace.
 
-You can look at the generated workspace file (in the `yalcspace` directory o the workspace) to see what VSCode commands are available. They're all in the build command group, accessible through `cmd|ctrl+shift+b`.
+You can look at the generated workspace file (in the `yalcspace` directory of the workspace) to see what VSCode commands are available. They're all in the build command group, accessible through `cmd|ctrl+shift+b`.
+
+### Building
+
+All packages in the workspace have associated build commands. You can build any of them in isolation, or include everything that references them, or, just everything. Activate `cmd|ctrl+shift+b` and Start typing in the name of the package you want to start building from. Select it, and then choose the build mode from the following menu.
+- `IncludeDownstreamDependents` means you build your selection, and everything that depends on it, following the dependency graph to the root of the space.
+- `Single` means you just build that package
+- `Everything` means you start from the lowest dependency in the graph connecterd to your selection and follow the graph to the root off the space.
+
+You can also select `Build Everything` which is the same as selecting your root project and then selecting `Everything`.
 
 ### Want to add a new dependency?
 
@@ -89,13 +98,6 @@ You need to have all the transitive dependencies on disk. If this command doesn'
 ### Done with a given package?
 
 `Eject Package` and select which one to remove from the workspace. If you want to reset everything, use `Eject All`.
-
-### Building?
-
-All your pacakges are there. You can build any of them in isolation, or include everything that references them, or, just everything. Activate `cmd|ctrl+shift+b` and Start typing in the name of the package you want to start building from. Select it, and then choose the build mode from the following menu.
-- Include Downstream means you build your selection, and everything that depends on it, following the dependency graph to the root of the space.
-- Single means you just build that package
-- Everything means you start from the lowest dependency in the graph connecterd to your selection and follow the graph to the root off the space.
 
 ## License
 
