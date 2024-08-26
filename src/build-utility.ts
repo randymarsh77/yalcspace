@@ -42,7 +42,13 @@ export function buildProject(options: BuildOptions) {
 			fixInvalidYalcLinks(p);
 
 			const cwd = p.path;
-			const { build, publish, push, install } = getProjectSettings(root, p);
+			const {
+				build,
+				publish,
+				push,
+				install,
+				publishDirectory: publishDirectorySetting,
+			} = getProjectSettings(root, p);
 			const stdio: StdioOptions = 'ignore';
 			log.info(`Installing modules for ${p.fullName}…`);
 			runRawCommand(install, { cwd, stdio });
@@ -51,11 +57,15 @@ export function buildProject(options: BuildOptions) {
 			runRawCommand(build, { cwd, stdio });
 
 			if (p.fullName !== root.fullName || pushAndPublishRoot) {
+				const publishDirectory = publishDirectorySetting
+					? path.join(cwd, publishDirectorySetting)
+					: cwd;
+
 				log.info(`Publishing ${p.fullName}…`);
-				runRawCommand(publish, { cwd, stdio });
+				runRawCommand(publish, { cwd: publishDirectory, stdio });
 
 				log.info(`Pushing ${p.fullName}…`);
-				runRawCommand(push, { cwd, stdio });
+				runRawCommand(push, { cwd: publishDirectory, stdio });
 			}
 		}
 	}
@@ -82,6 +92,7 @@ interface ProjectSettings {
 	publish: string;
 	push: string;
 	install: string;
+	publishDirectory?: string;
 }
 
 function getProjectSettings(root: Project, project: Project): ProjectSettings {
@@ -97,6 +108,7 @@ function getProjectSettings(root: Project, project: Project): ProjectSettings {
 		push: 'yalc push --sig',
 		publish: 'yalc publish --sig',
 		install: 'yarn --force',
+		...detectProjectSpecificSettings(project.path),
 	};
 	if (fs.existsSync(settingsFile)) {
 		const overrides = JSON.parse(fs.readFileSync(settingsFile).toString())[project.fullName] ?? {};
@@ -232,4 +244,30 @@ function replacePackageVersion(packagePath: string, oldVersion: string, newVersi
 	const data = fs.readFileSync(packagePath, 'utf8');
 	var replaced = data.replaceAll(oldVersion, newVersion);
 	fs.writeFileSync(packagePath, replaced, 'utf8');
+}
+
+function detectProjectSpecificSettings(projectDirectory: string): Partial<ProjectSettings> {
+	const settings: Partial<ProjectSettings> = {};
+	// Check some files to try and find if we can improve on assuming "yarn build" or "yarn publish".
+	try {
+		// Projects that use semantic-release might customize `pkgRoot` in the config file; we should push/publish from that directory.
+		const releaseConfigPath = path.join(projectDirectory, 'release.config.js');
+		if (fs.existsSync(releaseConfigPath)) {
+			const releaseConfig = require(releaseConfigPath);
+			console.log('found release config', releaseConfig);
+			const pkgRoot = releaseConfig?.plugins?.reduce((acc, v) => {
+				if (typeof v === 'object' && v[0] === '@semantic-release/npm') {
+					return v[1]?.pkgRoot;
+				}
+				return acc;
+			}, null);
+			if (pkgRoot) {
+				settings.publishDirectory = pkgRoot;
+			}
+		}
+	} catch (e) {
+		// Ignore errors
+	}
+
+	return settings;
 }
