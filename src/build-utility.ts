@@ -254,7 +254,6 @@ function detectProjectSpecificSettings(projectDirectory: string): Partial<Projec
 		const releaseConfigPath = path.join(projectDirectory, 'release.config.js');
 		if (fs.existsSync(releaseConfigPath)) {
 			const releaseConfig = require(releaseConfigPath);
-			console.log('found release config', releaseConfig);
 			const pkgRoot = releaseConfig?.plugins?.reduce((acc, v) => {
 				if (typeof v === 'object' && v[0] === '@semantic-release/npm') {
 					return v[1]?.pkgRoot;
