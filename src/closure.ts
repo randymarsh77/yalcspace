@@ -47,12 +47,26 @@ async function tryCloseSpace(
 	const deps = new Set(yalcspaceProjects.map((p) => p.fullName));
 	const additionalDeps = new Set<string>();
 	log.info(`Closing over: {\n  ${[...deps].join(',\n  ')}\n}\n`);
-	for (const dep of deps) {
-		log.debug(`Checking ${dep}`);
-		const paths = computeDependencyPaths(dep, root, depInfo);
+	for (const dep of yalcspaceProjects) {
+		// Build and publish dep
+		// Otherwise, the previous yalc publish might be stale, and linking to it might fail
+		if (!builtAndPublished.has(dep.fullName)) {
+			log.debug(`Building ${dep.fullName}`);
+			await buildProject({
+				includeDownstream: false,
+				includeUpstream: false,
+				pivot: dep,
+				root,
+				pushAndPublishRoot: true,
+			});
+			builtAndPublished.add(dep.fullName);
+		}
+
+		log.debug(`Checking for consumers of ${dep.fullName}`);
+		const paths = computeDependencyPaths(dep.fullName, root, depInfo);
 		for (const path of paths) {
 			log.debug(`  Path: ${path.join(' -> ')}`);
-			let lastUpstream = dep;
+			let lastUpstream = dep.fullName;
 			for (const pkg of path) {
 				// Step 1: Find code
 				const directory = findProjectRoot(pkg);
