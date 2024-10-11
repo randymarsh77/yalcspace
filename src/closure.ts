@@ -48,6 +48,11 @@ async function tryCloseSpace(
 	const additionalDeps = new Set<string>();
 	log.info(`Closing over: {\n  ${[...deps].join(',\n  ')}\n}\n`);
 	for (const dep of yalcspaceProjects) {
+		// Include root in dependency set, but there aren't any dependencies in between itself
+		if (dep.fullName === root.fullName) {
+			continue;
+		}
+
 		// Build and publish dep
 		// Otherwise, the previous yalc publish might be stale, and linking to it might fail
 		if (!builtAndPublished.has(dep.fullName)) {
