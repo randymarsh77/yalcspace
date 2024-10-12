@@ -39,19 +39,47 @@ export async function closeAndCompleteSpace(root: Project) {
 	return completeSpace(result);
 }
 
+function getBestDependencyOrder(projects: Project[]): Project[] {
+	log.debug('Computing best dependency order');
+	const bestOrder: Project[] = [];
+	const remaining = new Set(projects.map((p) => p.fullName));
+	while (remaining.size > 0) {
+		log.debug('Remaining:', [...remaining].join(', '));
+		const candidate = projects.find(
+			(p) =>
+				remaining.has(p.fullName) &&
+				(p.links.length === 0 || p.links.every((l) => !remaining.has(l.fullName)))
+		);
+		if (!candidate) {
+			throw new Error(
+				'Could not find a candidate to add to the build order; You might have circular dependencies.'
+			);
+		}
+		log.debug('Adding:', candidate.fullName);
+		log.debug('Links:', candidate.links.map((l) => l.fullName).join(', '));
+
+		bestOrder.push(candidate);
+		remaining.delete(candidate.fullName);
+	}
+	return bestOrder;
+}
+
 async function tryCloseSpace(
 	root: Project,
 	{ depInfo, builtAndPublished }: { depInfo: DependencyInformation; builtAndPublished: Set<string> }
 ) {
 	const yalcspaceProjects = traverseSpace(root);
-	const deps = new Set(yalcspaceProjects.map((p) => p.fullName));
+	const orderedProjects = getBestDependencyOrder(yalcspaceProjects);
+	const deps = new Set(orderedProjects.map((p) => p.fullName));
 	const additionalDeps = new Set<string>();
 	log.info(`Closing over: {\n  ${[...deps].join(',\n  ')}\n}\n`);
-	for (const dep of yalcspaceProjects) {
+	for (const dep of orderedProjects) {
 		// Include root in dependency set, but there aren't any dependencies in between itself
 		if (dep.fullName === root.fullName) {
 			continue;
 		}
+
+		log.debug('Processing dependency:', dep.fullName);
 
 		// Build and publish dep
 		// Otherwise, the previous yalc publish might be stale, and linking to it might fail
