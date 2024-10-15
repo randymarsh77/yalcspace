@@ -1,10 +1,10 @@
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
-import { StdioOptions } from 'child_process';
+import type { StdioOptions } from 'child_process';
 import { toPlatformPath, runRawCommand, runCommand } from './compatibility';
 import { log } from './logging';
-import { PackageJson, Project } from './types';
+import type { PackageJson, Project } from './types';
 import { traverseSpace } from './utility';
 
 interface BuildOptions {
@@ -138,8 +138,8 @@ function fixInvalidYalcLinks(project: Project) {
 	const installations = findAllPackageFiles(yalcInstallationsPath);
 	for (const [_, { path: packagePath, content: pkg }] of Object.entries(installations)) {
 		const linkedDeps = Object.entries({
-			...(pkg.dependencies ?? {}),
-			...(pkg.devDependencies ?? {}),
+			...pkg.dependencies,
+			...pkg.devDependencies,
 		})
 			.filter(([_, version]) => version.startsWith('file:.yalc'))
 			.map(([name, version]) => ({ name, version }));
@@ -254,7 +254,7 @@ function detectProjectSpecificSettings(projectDirectory: string): Partial<Projec
 		const releaseConfigPath = path.join(projectDirectory, 'release.config.js');
 		if (fs.existsSync(releaseConfigPath)) {
 			const releaseConfig = require(releaseConfigPath);
-			const pkgRoot = releaseConfig?.plugins?.reduce((acc, v) => {
+			const pkgRoot = releaseConfig?.plugins?.reduce((acc: string | null, v: any) => {
 				if (typeof v === 'object' && v[0] === '@semantic-release/npm') {
 					return v[1]?.pkgRoot;
 				}

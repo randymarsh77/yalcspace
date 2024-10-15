@@ -1,17 +1,17 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { findProjectRoot } from './code-finder';
-import { PackageJson, Project } from './types';
+import type { PackageJson, Project } from './types';
 
-export function resolveProject(directory: string): Project {
+export async function resolveProject(directory: string): Promise<Project> {
 	// Assume: You don't have circular references
 	const pkg = readPackageJson(directory);
 	const { links, allDependencies } = getDependencyInformationUsingPackageContents(pkg);
 	const deps: Project[] = [];
 	for (const link of links) {
-		const linkPath = findProjectRoot(link);
+		const linkPath = await findProjectRoot(link);
 		if (linkPath) {
-			deps.push(resolveProject(linkPath));
+			deps.push(await resolveProject(linkPath));
 		}
 	}
 	const nonScopedName = pkg.name.split('/').pop() || pkg.name;

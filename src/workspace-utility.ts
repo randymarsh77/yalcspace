@@ -1,7 +1,8 @@
 import * as os from 'os';
 import * as path from 'path';
-import { Project } from './types';
+import { type Project, type KnownEnvVars } from './types';
 import { getProjectMap } from './project-utility';
+import { getLoggingConfiguration } from './logging';
 
 const taskDefaults = {
 	type: 'shell',
@@ -17,6 +18,14 @@ const command = 'npx';
 const arg1 = 'yalcspace';
 
 export function generateWorkspace(root: Project): string {
+	const { debug, trace } = getLoggingConfiguration();
+	const additionalOptions = { env: {} as KnownEnvVars };
+	if (debug) {
+		additionalOptions.env.DEBUG = 'true';
+	}
+	if (trace) {
+		additionalOptions.env.TRACE = 'true';
+	}
 	const projects = getProjectMap(root);
 	const projectList = Object.keys(projects).sort();
 	const workspaceDir = path.join(os.homedir(), '.yalcspace', root.nonScopedName, 'yalcspace');
@@ -53,9 +62,10 @@ export function generateWorkspace(root: Project): string {
 				{
 					label: `Complete Yalcspace`,
 					command,
-					args: [arg1, 'complete'],
+					args: [arg1, 'complete', '--debug'],
 					options: {
 						cwd: root.path,
+						...additionalOptions,
 					},
 					...taskDefaults,
 				},
@@ -65,6 +75,7 @@ export function generateWorkspace(root: Project): string {
 					args: [arg1],
 					options: {
 						cwd: root.path,
+						...additionalOptions,
 					},
 					...taskDefaults,
 				},
@@ -74,6 +85,7 @@ export function generateWorkspace(root: Project): string {
 					args: [arg1, 'eject', '--pkg', '${input:package}'],
 					options: {
 						cwd: root.path,
+						...additionalOptions,
 					},
 					...taskDefaults,
 				},
@@ -83,6 +95,7 @@ export function generateWorkspace(root: Project): string {
 					args: [arg1, 'eject', '--all'],
 					options: {
 						cwd: root.path,
+						...additionalOptions,
 					},
 					...taskDefaults,
 				},
@@ -92,6 +105,7 @@ export function generateWorkspace(root: Project): string {
 					args: [arg1, 'build', '--mode', 'Everything', '--root', root.path],
 					options: {
 						cwd: root.path,
+						...additionalOptions,
 					},
 					...taskDefaults,
 				},
@@ -111,6 +125,7 @@ export function generateWorkspace(root: Project): string {
 						],
 						options: {
 							cwd: path,
+							...additionalOptions,
 						},
 						...taskDefaults,
 					};

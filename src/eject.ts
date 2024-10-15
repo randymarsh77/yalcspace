@@ -1,6 +1,6 @@
 import { runCommand } from './compatibility';
 import { log } from './logging';
-import { Project } from './types';
+import { type Project } from './types';
 import { traverseSpace } from './utility';
 
 export function eject(packageName: string, root: Project) {

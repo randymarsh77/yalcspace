@@ -9,10 +9,14 @@
   "main": "dist/cli.js",
   "devDependencies": {
     "@commitlint/cli": "^19.3.0",
+    "@types/bun": "^1.1.11",
+    "@types/shell-quote": "^1.7.5",
+    "@types/yarnpkg__lockfile": "^1.1.9",
     "commitlint-config-faithlife": "^1.0.0",
     "husky": "^9.0.11",
     "oxlint": "^0.4.2",
-    "rimraf": "^5.0.7"
+    "rimraf": "^5.0.7",
+    "typescript": "^5.6.3"
   },
   "bin": "dist/cli.js",
   "description": "Generates a VSCode workspace from yalc links",
@@ -21,7 +25,7 @@
   ],
   "license": "MIT",
   "scripts": {
-    "lint": "oxlint ./src",
+    "lint": "oxlint ./src && bun run tsc",
     "build": "rimraf dist && bun build ./src/cli.ts --target node --outdir dist",
     "prepare": "husky"
   },
@@ -29,6 +33,7 @@
   "dependencies": {
     "@simple-cli/base": "^1.1.2",
     "@yarnpkg/lockfile": "^1.1.0",
+    "prompt-choices": "^5.0.0",
     "shell-quote": "^1.8.1"
   }
 }

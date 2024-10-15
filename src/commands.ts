@@ -7,7 +7,7 @@ import { runCommand } from './compatibility';
 import { eject, ejectAll } from './eject';
 import { resolveProject } from './project-utility';
 import { generateWorkspace } from './workspace-utility';
-import { ICommand } from '@simple-cli/base';
+import { type ICommand } from '@simple-cli/base';
 
 const name = 'null';
 const summary = 'Generate and open a VSCode workspace for the current project';
@@ -69,7 +69,7 @@ A yalcspace is "complete" when every project in the yalcspace that has a depende
 		definitions: [],
 		usage: [],
 		execute: async () => {
-			await closeAndCompleteSpace(resolveProject(process.cwd()));
+			await closeAndCompleteSpace(await resolveProject(process.cwd()));
 			await generateAndOpenWorkspace();
 			return {
 				code: 0,
@@ -95,9 +95,9 @@ A yalcspace is "complete" when every project in the yalcspace that has a depende
 		execute: async ({ options }) => {
 			const { pkg, all } = options as IEjectOptions;
 			if (all) {
-				await ejectAll(resolveProject(process.cwd()));
+				await ejectAll(await resolveProject(process.cwd()));
 			} else if (pkg) {
-				await eject(pkg, resolveProject(process.cwd()));
+				await eject(pkg, await resolveProject(process.cwd()));
 			}
 			await generateAndOpenWorkspace();
 			return {
@@ -108,7 +108,7 @@ A yalcspace is "complete" when every project in the yalcspace that has a depende
 ];
 
 async function generateAndOpenWorkspace(root: string = process.cwd()) {
-	const project = resolveProject(root);
+	const project = await resolveProject(root);
 	const workspace = generateWorkspace(project);
 
 	const workspacePath = path.join(
@@ -134,10 +134,10 @@ interface IBuildOptions {
 	root: string;
 }
 
-async function build({ options }) {
-	const { mode, root } = options as IBuildOptions;
-	const pivotProject = resolveProject(process.cwd());
-	const rootProject = resolveProject(root ?? process.cwd());
+async function build({ options }: { options: IBuildOptions }) {
+	const { mode, root } = options;
+	const pivotProject = await resolveProject(process.cwd());
+	const rootProject = await resolveProject(root ?? process.cwd());
 	await buildProject({
 		includeDownstream: mode === 'Everything' || mode === 'IncludeDownstreamDependents',
 		includeUpstream: mode === 'Everything',

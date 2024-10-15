@@ -1,4 +1,4 @@
-import { Project } from './types';
+import { type Project } from './types';
 
 export function traverseSpace(root: Project): Project[] {
 	const elements: Project[] = [];

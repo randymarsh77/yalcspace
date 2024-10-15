@@ -3,10 +3,19 @@ import * as path from 'path';
 import * as os from 'os';
 import { registerProjectLocation, invalidateProjectLocation, getProjectLocation } from './data';
 import { log } from './logging';
+import { prompt } from './prompt-utility';
 
-const ignoreDirectories = new Set(['bin', 'obj', 'node_modules', '.yalc', '.yalcspace', '.Trash']);
+const ignoreDirectories = new Set([
+	'bin',
+	'obj',
+	'node_modules',
+	'bower_components',
+	'.yalc',
+	'.yalcspace',
+	'.Trash',
+]);
 
-export function findProjectRoot(packageName: string) {
+export async function findProjectRoot(packageName: string) {
 	const cached = getProjectLocation(packageName);
 	if (cached) {
 		if (fs.existsSync(cached)) {
@@ -26,8 +35,9 @@ function isDirectory(p: string) {
 	return false;
 }
 
-function doFindProjectRoot(project: string) {
+async function doFindProjectRoot(project: string) {
 	const searched = new Set<string>();
+	const willSearch = new Set<string>();
 	const currentLocations = process
 		.cwd()
 		.split(path.sep)
@@ -54,9 +64,31 @@ function doFindProjectRoot(project: string) {
 		'C:\\',
 	].filter((x) => x && isDirectory(x));
 
+	const promptBeforePaths = [os.homedir(), 'C:\\'].filter((x) => x && isDirectory(x));
+
 	log.debug(`Searching for ${project} in ${queue.join(', ')}`);
 
+	let queueDirty = true;
+	let nextPathDepth = 7;
 	while (queue.length > 0) {
+		if (queueDirty) {
+			// Resort before next iteration
+			queue.sort((a, b) => {
+				const deprioritizeA = a ? promptBeforePaths.includes(a) : false;
+				const deprioritizeB = b ? promptBeforePaths.includes(b) : false;
+				if (deprioritizeA !== deprioritizeB) {
+					return deprioritizeA ? 1 : -1;
+				}
+				const lengthA = a?.split(path.sep).length ?? 0;
+				const lengthB = b?.split(path.sep).length ?? 0;
+				if (lengthA !== lengthB) {
+					return lengthA > lengthB ? 1 : -1;
+				}
+				return 0;
+			});
+			queueDirty = false;
+		}
+
 		const root = queue.shift();
 		if (!root) {
 			throw new Error('queue was empty');
@@ -64,6 +96,42 @@ function doFindProjectRoot(project: string) {
 
 		if (searched.has(root)) {
 			continue;
+		}
+
+		if (root.split(path.sep).length > nextPathDepth) {
+			const choice = await prompt(
+				`Code for ${project} not found in paths with a length of ${nextPathDepth} or less, what should I do?`,
+				[
+					'Assume you just cloned the code after reading this and restart my search',
+					'Keep searching in',
+					'Give up',
+				]
+			);
+			if (choice === 0) {
+				return await doFindProjectRoot(project);
+			} else if (choice === 1) {
+				nextPathDepth += 1;
+			} else if (choice === 2) {
+				console.error(`Could not find code for ${project}`);
+				process.exit(1);
+			}
+		}
+
+		if (promptBeforePaths.find((p) => p.startsWith(root))) {
+			const choice = await prompt(
+				`Code for ${project} not found in common locations, what should I do?`,
+				[
+					'Assume you just cloned the code after reading this and restart my search',
+					`Keep searching in ${root}`,
+					'Give up',
+				]
+			);
+			if (choice === 0) {
+				return await doFindProjectRoot(project);
+			} else if (choice === 2) {
+				console.error(`Could not find code for ${project}`);
+				process.exit(1);
+			}
 		}
 
 		log.trace(`Checking ${root}...`);
@@ -90,6 +158,10 @@ function doFindProjectRoot(project: string) {
 						// Skip macOS app bundles
 						continue;
 					}
+					if (f.endsWith('.xcassets')) {
+						// Skip XCAssets
+						continue;
+					}
 					if (f === '.git') {
 						// TODO: actual optimization
 						// Assume most source code is in one fs subtree
@@ -98,11 +170,16 @@ function doFindProjectRoot(project: string) {
 						continue;
 					}
 
-					queue.push(fullPath);
+					if (!willSearch.has(fullPath)) {
+						willSearch.add(fullPath);
+						queue.push(fullPath);
+						queueDirty = true;
+					}
 				} else if (f === 'package.json') {
 					const pkg = JSON.parse(fs.readFileSync(fullPath).toString());
 					// Index all code that is found
-					registerProjectLocation(project, root);
+					log.debug(`Found ${pkg.name} at ${root}`);
+					registerProjectLocation(pkg.name, root, false);
 					if (pkg.name === project) {
 						return root;
 					}

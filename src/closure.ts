@@ -6,7 +6,7 @@ import { findProjectRoot } from './code-finder';
 import { runCommand } from './compatibility';
 import { resolveProject, getDependencyInformationUsingDirectory } from './project-utility';
 import { log } from './logging';
-import { Project } from './types';
+import { type Project } from './types';
 import { traverseSpace } from './utility';
 
 export async function closeAndCompleteSpace(root: Project) {
@@ -33,7 +33,7 @@ export async function closeAndCompleteSpace(root: Project) {
 		iterations++;
 		log.info(`Attempting to close yalcspace; Iteration: ${iterations}`);
 		spaceIsClosed = await tryCloseSpace(result, memo);
-		result = resolveProject(root.path);
+		result = await resolveProject(root.path);
 	}
 	log.info(`Successfully closed space.`);
 	return completeSpace(result);
@@ -102,7 +102,7 @@ async function tryCloseSpace(
 			let lastUpstream = dep.fullName;
 			for (const pkg of path) {
 				// Step 1: Find code
-				const directory = findProjectRoot(pkg);
+				const directory = await findProjectRoot(pkg);
 				if (!directory) {
 					console.error(`Could not find code for ${pkg}`);
 					console.error(`Cannot close yalcspace`);
@@ -131,7 +131,7 @@ async function tryCloseSpace(
 
 					// Step 3: Build and publish
 					if (!builtAndPublished.has(pkg)) {
-						const project = resolveProject(directory);
+						const project = await resolveProject(directory);
 						await buildProject({
 							includeDownstream: false,
 							includeUpstream: false,
@@ -181,7 +181,7 @@ function getDirectDependencies(root: Project): string[] {
 	return getDependencyInformationUsingDirectory(root.path).allDependencies;
 }
 
-function completeSpace(root: Project) {
+async function completeSpace(root: Project) {
 	// A yalcspace is "complete" if every there is no non-linked dependency of any member of the yalcspace which is also in the yalcspace.
 	// In order to compute the complete space, we need to:
 	// 1. Get all elements of the yalcspace
@@ -203,7 +203,7 @@ function completeSpace(root: Project) {
 	}
 	log.info(`Successfully completed space.`);
 
-	return resolveProject(root.path);
+	return await resolveProject(root.path);
 }
 
 function parseDependencyInfo(project: Project): DependencyInformation {
@@ -230,7 +230,7 @@ export function getReverseDeps(packageName: string, memo: DependencyInformation)
 export function parseYarnLock(project: Project): DependencyInformation {
 	const lockfile = fs.readFileSync(path.join(project.path, 'yarn.lock')).toString();
 	const json = yarnLock.parse(lockfile);
-	const memo = {};
+	const memo: DependencyInformation = {};
 	for (const packageAndVersion of Object.keys(json.object)) {
 		const [scope, rest] = packageAndVersion.split('/');
 		const nonScoped = rest ?? scope;

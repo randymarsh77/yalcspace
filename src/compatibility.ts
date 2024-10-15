@@ -1,4 +1,4 @@
-import { spawnSync, SpawnSyncOptions } from 'child_process';
+import { spawnSync, type SpawnSyncOptions } from 'child_process';
 import { parse } from 'shell-quote';
 
 export function toPlatformPath(path: string) {
@@ -25,7 +25,7 @@ export function runCommand(command: string, args: string[], options?: SpawnSyncO
 }
 
 export function runRawCommand(command: string, options?: SpawnSyncOptions) {
-	const commandAndArgs = parse(command);
+	const commandAndArgs = parse(command) as string[];
 	const processName = commandAndArgs.shift();
 	if (!processName) {
 		throw new Error(`Invalid command: ${command}`);

@@ -1,15 +1,18 @@
+import { type KnownEnvVars } from './types';
+
 interface LoggingConfiguration {
 	info: boolean;
 	debug: boolean;
 	trace: boolean;
 }
 
-function getLoggingConfiguration(): LoggingConfiguration {
+export function getLoggingConfiguration(): LoggingConfiguration {
 	// By default, logging is disabled.
 	// To enable debug logging, set the DEBUG environment variable to 'true'.
 	// To enable trace and debug logging, set the TRACE environment variable to 'true'.
-	const trace = process.env.TRACE === 'true';
-	const debug = trace || process.env.DEBUG === 'true';
+	const env = process.env as KnownEnvVars;
+	const trace = env.TRACE === 'true';
+	const debug = trace || env.DEBUG === 'true';
 	return {
 		info: true,
 		debug,
