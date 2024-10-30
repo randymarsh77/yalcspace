@@ -13,10 +13,18 @@ interface BuildOptions {
 	pivot: Project;
 	root: Project;
 	pushAndPublishRoot: boolean;
+	alreadyBuiltProjects?: Set<string>;
 }
 
 export function buildProject(options: BuildOptions) {
-	const { root, pivot, includeUpstream, includeDownstream, pushAndPublishRoot } = options;
+	const {
+		root,
+		pivot,
+		includeUpstream,
+		includeDownstream,
+		pushAndPublishRoot,
+		alreadyBuiltProjects,
+	} = options;
 	const upstreamDeps = getBuildOrder(pivot);
 	let queue = getBuildOrder(root);
 	if (!queue.find((p) => p.fullName === pivot.fullName)) {
@@ -32,9 +40,10 @@ export function buildProject(options: BuildOptions) {
 	for (const p of queue) {
 		const isPivot = p.fullName === pivot.fullName;
 		const buildThisProject =
-			(includeUpstream && upstreamDeps.find((x) => x.fullName === p.fullName)) ||
-			isPivot ||
-			(includeDownstream && getBuildOrder(p).find((x) => x.fullName === pivot.fullName));
+			!(alreadyBuiltProjects ?? new Set()).has(p.fullName) &&
+			((includeUpstream && upstreamDeps.find((x) => x.fullName === p.fullName)) ||
+				isPivot ||
+				(includeDownstream && getBuildOrder(p).find((x) => x.fullName === pivot.fullName)));
 
 		if (buildThisProject) {
 			log.info(`Building ${p.fullName}…`);
@@ -55,6 +64,8 @@ export function buildProject(options: BuildOptions) {
 
 			log.info(`Building ${p.fullName} with command: '${build}'…`);
 			runRawCommand(build, { cwd, stdio });
+
+			alreadyBuiltProjects?.add(p.fullName);
 
 			if (p.fullName !== root.fullName || pushAndPublishRoot) {
 				const publishDirectory = publishDirectorySetting

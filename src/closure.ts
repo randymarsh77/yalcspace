@@ -97,6 +97,11 @@ async function tryCloseSpace(
 
 		log.debug(`Checking for consumers of ${dep.fullName}`);
 		const paths = computeDependencyPaths(dep.fullName, root, depInfo);
+		log.debug(
+			`Found dependency paths: {\n  ${[...paths.map((path) => path.join(' -> '))].join(
+				',\n  '
+			)}\n}\n`
+		);
 		for (const path of paths) {
 			log.debug(`  Path: ${path.join(' -> ')}`);
 			let lastUpstream = dep.fullName;
@@ -134,10 +139,11 @@ async function tryCloseSpace(
 						const project = await resolveProject(directory);
 						await buildProject({
 							includeDownstream: false,
-							includeUpstream: false,
+							includeUpstream: true,
 							pivot: project,
 							root,
 							pushAndPublishRoot: true,
+							alreadyBuiltProjects: builtAndPublished,
 						});
 						builtAndPublished.add(pkg);
 					}
