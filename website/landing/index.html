@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>yalcspace — Dynamic VSCode workspaces from yalc links</title>
+  <meta name="description" content="yalcspace generates dynamic VSCode workspaces from yalc links, streamlining multi-package local development.">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --primary:#6d5ce7;
+      --primary-light:#a79af2;
+      --primary-dark:#5a47e3;
+      --bg:#ffffff;
+      --bg-alt:#f8f7ff;
+      --text:#1a1a2e;
+      --text-muted:#555;
+      --code-bg:#f0eef9;
+      --card-bg:#ffffff;
+      --card-border:#e8e5f5;
+      --footer-bg:#1a1a2e;
+      --footer-text:#ccc;
+    }
+    @media(prefers-color-scheme:dark){
+      :root{
+        --bg:#1a1a2e;
+        --bg-alt:#16213e;
+        --text:#e8e8e8;
+        --text-muted:#aaa;
+        --code-bg:#2a2a4a;
+        --card-bg:#16213e;
+        --card-border:#2a2a4a;
+        --footer-bg:#0f0f23;
+        --footer-text:#888;
+      }
+    }
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+    a{color:var(--primary);text-decoration:none}
+    a:hover{text-decoration:underline}
+    code{background:var(--code-bg);padding:.15em .4em;border-radius:4px;font-size:.9em;font-family:'SF Mono',SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace}
+
+    .hero{text-align:center;padding:5rem 1.5rem 4rem;background:var(--bg-alt)}
+    .hero h1{font-size:clamp(2.2rem,5vw,3.5rem);font-weight:800;margin-bottom:.5rem;letter-spacing:-.02em}
+    .hero h1 span{color:var(--primary)}
+    .hero p{font-size:1.2rem;color:var(--text-muted);max-width:600px;margin:0 auto 2rem}
+    .hero-actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+    .btn{display:inline-block;padding:.75rem 1.75rem;border-radius:8px;font-weight:600;font-size:1rem;transition:transform .15s,box-shadow .15s}
+    .btn:hover{text-decoration:none;transform:translateY(-1px);box-shadow:0 4px 12px rgba(109,92,231,.3)}
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-secondary{border:2px solid var(--primary);color:var(--primary)}
+    .install-snippet{margin-top:2rem}
+    .install-snippet code{font-size:1.1rem;padding:.5rem 1.25rem;display:inline-block}
+
+    .features{padding:4rem 1.5rem;max-width:960px;margin:0 auto}
+    .features h2{text-align:center;font-size:1.8rem;margin-bottom:2.5rem}
+    .feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem}
+    .feature-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:1.5rem}
+    .feature-card h3{font-size:1.15rem;margin-bottom:.5rem}
+    .feature-card p{color:var(--text-muted);font-size:.95rem}
+    .feature-icon{font-size:1.5rem;margin-bottom:.5rem;display:block}
+
+    .how-it-works{padding:4rem 1.5rem;background:var(--bg-alt)}
+    .how-it-works .container{max-width:700px;margin:0 auto}
+    .how-it-works h2{text-align:center;font-size:1.8rem;margin-bottom:2rem}
+    .steps{list-style:none;counter-reset:step}
+    .steps li{counter-increment:step;padding:.75rem 0 .75rem 3rem;position:relative;font-size:1.05rem}
+    .steps li::before{content:counter(step);position:absolute;left:0;top:.65rem;width:2rem;height:2rem;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem}
+
+    footer{background:var(--footer-bg);color:var(--footer-text);text-align:center;padding:2rem 1.5rem;font-size:.9rem}
+    footer a{color:var(--primary-light)}
+  </style>
+</head>
+<body>
+
+<section class="hero">
+  <h1><span>yalcspace</span></h1>
+  <p>Dynamic VSCode workspaces from yalc links. Streamline multi-package local development.</p>
+  <div class="hero-actions">
+    <a href="/docs/" class="btn btn-primary">Read the Docs</a>
+    <a href="https://github.com/randymarsh77/yalcspace" class="btn btn-secondary">GitHub</a>
+  </div>
+  <div class="install-snippet">
+    <code>npx yalcspace</code>
+  </div>
+</section>
+
+<section class="features">
+  <h2>Why yalcspace?</h2>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <span class="feature-icon" aria-hidden="true">🔗</span>
+      <h3>Dependency Graph Aware</h3>
+      <p>Constructs a full dependency graph from your yalc links and performs operations in the correct order.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon" aria-hidden="true">📦</span>
+      <h3>No Duplicate Packages</h3>
+      <p>Eliminates duplicate package versions in your bundle caused by yalc's <code>file://</code> protocol references.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon" aria-hidden="true">⚡</span>
+      <h3>One Command Setup</h3>
+      <p>Run <code>npx yalcspace</code> in your project and get a fully configured VSCode workspace instantly.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon" aria-hidden="true">🛠️</span>
+      <h3>Smart Build Commands</h3>
+      <p>Build a single package, its dependents, or everything — all accessible via <code>Cmd+Shift+B</code>.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon" aria-hidden="true">⚙️</span>
+      <h3>Customizable</h3>
+      <p>Override build and push commands per-package via a simple JSON settings file.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon" aria-hidden="true">🧹</span>
+      <h3>Easy Cleanup</h3>
+      <p>Eject individual packages or reset your entire workspace when you're done.</p>
+    </div>
+  </div>
+</section>
+
+<section class="how-it-works">
+  <div class="container">
+    <h2>How It Works</h2>
+    <ol class="steps">
+      <li>Link packages with <code>yalc add &lt;package&gt;</code> in your project</li>
+      <li>Run <code>npx yalcspace</code> to generate a workspace</li>
+      <li>Use VSCode build tasks to build in dependency order</li>
+      <li>Use <strong>Complete Yalcspace</strong> to close transitive dependencies</li>
+    </ol>
+  </div>
+</section>
+
+<footer>
+  <p>MIT License · <a href="https://github.com/randymarsh77/yalcspace">GitHub</a> · <a href="/docs/">Documentation</a></p>
+</footer>
+
+</body>
+</html>
