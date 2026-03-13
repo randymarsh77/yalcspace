@@ -114,11 +114,12 @@ function getProjectSettings(root: Project, project: Project): ProjectSettings {
 		'yalcspace',
 		'settings.json'
 	);
+	const pm = detectPackageManager(project.path);
 	const settings = {
-		build: 'yarn build',
+		build: pm === 'npm' ? 'npm run build' : 'yarn build',
 		push: 'yalc push --sig',
 		publish: 'yalc publish --sig',
-		install: 'yarn --force',
+		install: pm === 'npm' ? 'npm install --force' : 'yarn --force',
 		...detectProjectSpecificSettings(project.path),
 	};
 	if (fs.existsSync(settingsFile)) {
@@ -280,4 +281,16 @@ function detectProjectSpecificSettings(projectDirectory: string): Partial<Projec
 	}
 
 	return settings;
+}
+
+type PackageManager = 'yarn' | 'npm';
+
+export function detectPackageManager(projectPath: string): PackageManager {
+	if (fs.existsSync(path.join(projectPath, 'yarn.lock'))) {
+		return 'yarn';
+	}
+	if (fs.existsSync(path.join(projectPath, 'package-lock.json'))) {
+		return 'npm';
+	}
+	return 'yarn';
 }

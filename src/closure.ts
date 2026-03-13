@@ -220,6 +220,13 @@ function parseDependencyInfo(project: Project): DependencyInformation {
 		};
 	}
 
+	if (fs.existsSync(path.join(project.path, 'package-lock.json'))) {
+		return {
+			[project.fullName]: new Set(project.allDependencies),
+			...parsePackageLock(project),
+		};
+	}
+
 	throw new Error('Unsupported package manager');
 }
 
@@ -247,5 +254,36 @@ export function parseYarnLock(project: Project): DependencyInformation {
 			memo[fullName].add(dep)
 		);
 	}
+	return memo;
+}
+
+interface PackageLockJson {
+	lockfileVersion?: number;
+	packages?: { [path: string]: { dependencies?: { [name: string]: string } } };
+	dependencies?: {
+		[name: string]: { requires?: { [name: string]: string } };
+	};
+}
+
+export function parsePackageLock(project: Project): DependencyInformation {
+	const lockfile = fs.readFileSync(path.join(project.path, 'package-lock.json')).toString();
+	const json: PackageLockJson = JSON.parse(lockfile);
+	const memo: DependencyInformation = {};
+
+	if (json.packages) {
+		for (const [packagePath, packageInfo] of Object.entries(json.packages)) {
+			if (packagePath === '') continue;
+			const name = packagePath.replace(/^node_modules\//, '');
+			if (name.includes('node_modules/')) continue;
+			memo[name] = memo[name] ?? new Set();
+			Object.keys(packageInfo.dependencies ?? {}).forEach((dep) => memo[name].add(dep));
+		}
+	} else if (json.dependencies) {
+		for (const [name, packageInfo] of Object.entries(json.dependencies)) {
+			memo[name] = memo[name] ?? new Set();
+			Object.keys(packageInfo.requires ?? {}).forEach((dep) => memo[name].add(dep));
+		}
+	}
+
 	return memo;
 }
